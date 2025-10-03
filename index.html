@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>電子書閱讀器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.93/epub.min.js"></script>
+  <style>
+    #book-list { margin-bottom: 20px; }
+    #reader { width: 100%; height: 80vh; border: 1px solid #ccc; }
+    button { margin: 5px; padding: 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>選擇電子書</h1>
+  <div id="book-list"></div>
+  <div id="reader"></div>
+  <script>
+    // 使用 GitHub API 動態取得 EPUB 清單
+    fetch("https://api.github.com/repos/kkwenFreemind/epub3/contents/電子書下載")
+      .then(response => response.json())
+      .then(data => {
+        const books = data
+          .filter(item => item.name.endsWith(".epub"))
+          .map(item => `電子書下載/${item.name}`);
+        const bookList = document.getElementById("book-list");
+        books.forEach(book => {
+          const button = document.createElement("button");
+          button.textContent = book.split("/").pop(); // 顯示檔案名稱
+          button.onclick = () => loadBook(book);
+          bookList.appendChild(button);
+        });
+        if (books.length > 0) loadBook(books[0]); // 預設載入第一本
+      })
+      .catch(error => console.error("Error fetching books:", error));
+
+    // 載入並渲染 EPUB
+    let currentBook;
+    let currentRendition;
+    function loadBook(bookPath) {
+      if (currentBook) {
+        currentRendition.destroy(); // 銷毀前一本書的渲染
+        currentBook.destroy();
+      }
+      currentBook = ePub(bookPath);
+      currentRendition = currentBook.renderTo("reader", {
+        width: "100%",
+        height: "100%",
+        spread: "auto",
+        allowScriptedContent: true // 若你的 EPUB 有腳本內容，啟用此項（但注意安全）
+      });
+      currentRendition.display();
+    }
+  </script>
+</body>
+</html>
